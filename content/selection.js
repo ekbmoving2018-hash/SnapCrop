@@ -23,6 +23,15 @@ window.SnapCrop.Selection = (function () {
     selectionEl.id = 'snapcrop-selection';
     selectionEl.style.display = 'none';
 
+    // 8 handles: corners + midpoints
+    [[0,0],[50,0],[100,0],[0,50],[100,50],[0,100],[50,100],[100,100]].forEach(([x, y]) => {
+      const h = document.createElement('div');
+      h.className = 'sc-handle';
+      h.style.left = x + '%';
+      h.style.top = y + '%';
+      selectionEl.appendChild(h);
+    });
+
     sizeEl = document.createElement('div');
     sizeEl.id = 'snapcrop-size';
 
