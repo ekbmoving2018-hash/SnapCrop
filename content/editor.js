@@ -8,171 +8,199 @@ window.SnapCrop.Editor = (function () {
     { name: 'White',  hex: '#FFFFFF' }
   ];
 
-  let editorEl = null;
+  const PANEL_WIDTH = 116;
+  const PANEL_GAP   = 12;
+
+  // mode: 'idle' | 'panel' | 'editing'
+  let mode = 'idle';
+  let onCaptureCallback = null;
+
+  let frameEl = null;
+  let panelEl = null;
   let canvasEl = null;
-  let currentTool = 'arrow';
+
+  let currentTool  = 'arrow';
   let currentColor = '#FF3B30';
-  let isDrawing = false;
+  let isDrawing    = false;
   let startX = 0;
   let startY = 0;
   let activeTextInput = null;
-  let format = 'png';
 
-  function open(croppedDataURL) {
-    editorEl = document.createElement('div');
-    editorEl.id = 'snapcrop-editor';
+  /* ── Phase 1: show panel only (no capture yet) ── */
 
-    editorEl.appendChild(buildToolbar());
-    editorEl.appendChild(buildCanvasWrap(croppedDataURL));
-    editorEl.appendChild(buildFooter());
-    document.body.appendChild(editorEl);
-
-    attachEvents();
+  function showPanel(bounds, onCapture) {
+    mode = 'panel';
+    onCaptureCallback = onCapture;
+    panelEl = buildPanel(bounds);
+    document.body.appendChild(panelEl);
+    panelEl.addEventListener('click', onPanelClick);
+    document.addEventListener('keydown', onKeyDown);
   }
 
-  /* ── TOOLBAR ── */
+  /* ── Phase 2: capture done, switch to edit mode ── */
 
-  function buildToolbar() {
-    const bar = document.createElement('div');
-    bar.id = 'snapcrop-toolbar';
+  function open(croppedDataURL, bounds) {
+    mode = 'editing';
+    onCaptureCallback = null;
+
+    frameEl = document.createElement('div');
+    frameEl.id = 'sc-canvas-frame';
+    frameEl.style.cssText = [
+      'position: fixed !important',
+      `left: ${bounds.x}px`,
+      `top: ${bounds.y}px`,
+      `width: ${bounds.width}px`,
+      `height: ${bounds.height}px`,
+      'z-index: 2147483646 !important',
+      'box-shadow: 0 0 0 9999px rgba(0,0,0,0.55)',
+      'line-height: 0'
+    ].join(';');
+
+    canvasEl = document.createElement('canvas');
+    canvasEl.id = 'snapcrop-canvas';
+    frameEl.appendChild(canvasEl);
+    document.body.appendChild(frameEl);
+
+    const img = new Image();
+    img.onload = () => {
+      canvasEl.width  = img.naturalWidth;
+      canvasEl.height = img.naturalHeight;
+      window.SnapCrop.Annotations.init(canvasEl, croppedDataURL);
+    };
+    img.src = croppedDataURL;
+
+    canvasEl.addEventListener('mousedown', onCanvasMouseDown);
+    document.addEventListener('mousemove', onCanvasMouseMove);
+    document.addEventListener('mouseup',   onCanvasMouseUp);
+  }
+
+  /* ── PANEL BUILDER ── */
+
+  function buildPanel(bounds) {
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
+
+    let left = bounds.x + bounds.width + PANEL_GAP;
+    if (left + PANEL_WIDTH > viewW) left = bounds.x - PANEL_WIDTH - PANEL_GAP;
+    left = Math.max(8, left);
+
+    let top = Math.max(8, Math.min(bounds.y, viewH - 360));
+
+    const panel = document.createElement('div');
+    panel.id = 'sc-panel';
+    panel.style.cssText = [
+      'position: fixed !important',
+      `left: ${left}px`,
+      `top: ${top}px`,
+      'z-index: 2147483647 !important'
+    ].join(';');
 
     [
       { id: 'arrow',  label: '→ Arrow'  },
       { id: 'marker', label: '■ Marker' },
       { id: 'text',   label: 'T Text'   }
     ].forEach(t => {
-      const btn = el('button', 'sc-tool-btn' + (t.id === 'arrow' ? ' active' : ''));
+      const btn = el('button', 'sc-panel-btn sc-tool-btn' + (t.id === 'arrow' ? ' active' : ''));
       btn.dataset.tool = t.id;
-      btn.textContent = t.label;
-      bar.appendChild(btn);
+      btn.textContent  = t.label;
+      panel.appendChild(btn);
     });
 
-    bar.appendChild(sep());
+    panel.appendChild(divider());
 
+    const colorRow = el('div', 'sc-panel-colors');
     COLORS.forEach(c => {
       const btn = el('button', 'sc-color-btn' + (c.hex === '#FF3B30' ? ' active' : ''));
       btn.dataset.color = c.hex;
       btn.title = c.name;
       btn.style.setProperty('--sc-color', c.hex);
-      bar.appendChild(btn);
+      colorRow.appendChild(btn);
     });
+    panel.appendChild(colorRow);
 
-    bar.appendChild(sep());
+    panel.appendChild(divider());
 
-    const undoBtn = el('button', 'sc-action-btn');
+    const undoBtn = el('button', 'sc-panel-btn');
     undoBtn.id = 'sc-undo';
     undoBtn.textContent = '↩ Undo';
+    panel.appendChild(undoBtn);
 
-    const clearBtn = el('button', 'sc-action-btn');
+    const clearBtn = el('button', 'sc-panel-btn');
     clearBtn.id = 'sc-clear';
     clearBtn.textContent = '✕ Clear';
+    panel.appendChild(clearBtn);
 
-    const closeBtn = el('button', 'sc-action-btn sc-close');
-    closeBtn.id = 'sc-close';
-    closeBtn.textContent = '✕ Close';
-
-    bar.appendChild(undoBtn);
-    bar.appendChild(clearBtn);
-    bar.appendChild(closeBtn);
-
-    return bar;
-  }
-
-  /* ── CANVAS ── */
-
-  function buildCanvasWrap(croppedDataURL) {
-    const wrap = document.createElement('div');
-    wrap.id = 'snapcrop-canvas-wrap';
-
-    canvasEl = document.createElement('canvas');
-    canvasEl.id = 'snapcrop-canvas';
-
-    const img = new Image();
-    img.onload = () => {
-      canvasEl.width = img.naturalWidth;
-      canvasEl.height = img.naturalHeight;
-      window.SnapCrop.Annotations.init(canvasEl, croppedDataURL);
-    };
-    img.src = croppedDataURL;
-
-    wrap.appendChild(canvasEl);
-    return wrap;
-  }
-
-  /* ── FOOTER ── */
-
-  function buildFooter() {
-    const footer = document.createElement('div');
-    footer.id = 'snapcrop-footer';
-
-    const fmtLabel = el('span', 'sc-fmt-label');
-    fmtLabel.textContent = 'Format:';
-    footer.appendChild(fmtLabel);
+    panel.appendChild(divider());
 
     ['png', 'pdf'].forEach(f => {
-      const label = el('label', 'sc-fmt-radio');
+      const label = el('label', 'sc-panel-radio');
       const radio = document.createElement('input');
-      radio.type = 'radio';
-      radio.name = 'sc-format';
-      radio.value = f;
-      radio.checked = f === 'png';
+      radio.type    = 'radio';
+      radio.name    = 'sc-format';
+      radio.value   = f;
+      radio.checked = (f === 'png');
       label.appendChild(radio);
       label.append(' ' + f.toUpperCase());
-      footer.appendChild(label);
+      panel.appendChild(label);
     });
 
-    const dlBtn = el('button', 'sc-download-btn');
+    panel.appendChild(divider());
+
+    const dlBtn = el('button', 'sc-panel-download');
     dlBtn.id = 'sc-download';
     dlBtn.textContent = '↓ Download';
-    footer.appendChild(dlBtn);
+    panel.appendChild(dlBtn);
 
-    return footer;
+    panel.appendChild(divider());
+
+    const closeBtn = el('button', 'sc-panel-close');
+    closeBtn.id = 'sc-close';
+    closeBtn.textContent = '✕ Close';
+    panel.appendChild(closeBtn);
+
+    return panel;
   }
 
-  /* ── EVENTS ── */
+  /* ── EVENT HANDLERS ── */
 
-  function attachEvents() {
-    editorEl.addEventListener('click', onToolbarClick);
-    canvasEl.addEventListener('mousedown', onCanvasMouseDown);
-    document.addEventListener('mousemove', onCanvasMouseMove);
-    document.addEventListener('mouseup', onCanvasMouseUp);
-    document.addEventListener('keydown', onKeyDown);
-    window.addEventListener('beforeunload', () => window.SnapCrop.cleanup());
-  }
-
-  function onToolbarClick(e) {
+  function onPanelClick(e) {
     const toolBtn = e.target.closest('.sc-tool-btn');
     if (toolBtn) {
       currentTool = toolBtn.dataset.tool;
-      editorEl.querySelectorAll('.sc-tool-btn').forEach(b => b.classList.remove('active'));
+      panelEl.querySelectorAll('.sc-tool-btn').forEach(b => b.classList.remove('active'));
       toolBtn.classList.add('active');
+      if (mode === 'panel') { triggerCapture(); return; }
       return;
     }
 
     const colorBtn = e.target.closest('.sc-color-btn');
     if (colorBtn) {
       currentColor = colorBtn.dataset.color;
-      editorEl.querySelectorAll('.sc-color-btn').forEach(b => b.classList.remove('active'));
+      panelEl.querySelectorAll('.sc-color-btn').forEach(b => b.classList.remove('active'));
       colorBtn.classList.add('active');
+      if (mode === 'panel') { triggerCapture(); return; }
       return;
     }
 
     const id = e.target.id;
+    if (id === 'sc-close') { window.SnapCrop.cleanup(); return; }
+
+    if (mode !== 'editing') return;
+
     if (id === 'sc-undo')     { window.SnapCrop.Annotations.undo();  return; }
     if (id === 'sc-clear')    { window.SnapCrop.Annotations.clear(); return; }
-    if (id === 'sc-close')    { window.SnapCrop.cleanup();           return; }
     if (id === 'sc-download') { onDownload();                        return; }
   }
 
-  function canvasPos(e) {
-    const rect = canvasEl.getBoundingClientRect();
-    return {
-      x: (e.clientX - rect.left) * (canvasEl.width  / rect.width),
-      y: (e.clientY - rect.top)  * (canvasEl.height / rect.height)
-    };
+  function triggerCapture() {
+    if (!onCaptureCallback) return;
+    const cb = onCaptureCallback;
+    onCaptureCallback = null;
+    cb();
   }
 
   function onCanvasMouseDown(e) {
+    if (mode !== 'editing') return;
     e.preventDefault();
     if (currentTool === 'text') { startTextInput(e); return; }
     isDrawing = true;
@@ -183,7 +211,6 @@ window.SnapCrop.Editor = (function () {
 
   function onCanvasMouseMove(e) {
     if (!isDrawing) return;
-    // live preview handled on mouseup commit — keeps code simple for v1
   }
 
   function onCanvasMouseUp(e) {
@@ -207,16 +234,23 @@ window.SnapCrop.Editor = (function () {
     }
   }
 
+  function canvasPos(e) {
+    const rect = canvasEl.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (canvasEl.width  / rect.width),
+      y: (e.clientY - rect.top)  * (canvasEl.height / rect.height)
+    };
+  }
+
   function startTextInput(e) {
     if (activeTextInput) commitText();
-
     const rect = canvasEl.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * (canvasEl.width  / rect.width);
     const cy = (e.clientY - rect.top)  * (canvasEl.height / rect.height);
 
     const input = document.createElement('input');
-    input.id = 'sc-text-input';
-    input.type = 'text';
+    input.id    = 'sc-text-input';
+    input.type  = 'text';
     input.style.left  = e.clientX + 'px';
     input.style.top   = e.clientY + 'px';
     input.style.color = currentColor;
@@ -226,8 +260,8 @@ window.SnapCrop.Editor = (function () {
 
     input.addEventListener('keydown', (ev) => {
       ev.stopPropagation();
-      if (ev.key === 'Enter')  { commitText(); }
-      if (ev.key === 'Escape') { cancelText(); }
+      if (ev.key === 'Enter')  commitText();
+      if (ev.key === 'Escape') cancelText();
     });
     input.addEventListener('blur', () => commitText());
   }
@@ -259,36 +293,35 @@ window.SnapCrop.Editor = (function () {
   }
 
   async function onDownload() {
-    const selectedFormat = editorEl.querySelector('input[name="sc-format"]:checked').value;
+    const checked = panelEl.querySelector('input[name="sc-format"]:checked');
+    const fmt = checked ? checked.value : 'png';
     const canvas = window.SnapCrop.Annotations.getCanvas();
-    await window.SnapCrop.Exporter.download(canvas, selectedFormat);
+    await window.SnapCrop.Exporter.download(canvas, fmt);
     window.SnapCrop.cleanup();
   }
 
   /* ── UTILS ── */
 
-  function el(tag, className) {
+  function el(tag, cls) {
     const e = document.createElement(tag);
-    if (className) e.className = className;
+    if (cls) e.className = cls;
     return e;
   }
 
-  function sep() {
-    return el('div', 'sc-sep');
-  }
+  function divider() { return el('div', 'sc-panel-divider'); }
 
   function destroy() {
-    if (!editorEl) return;
-    if (activeTextInput) activeTextInput.el.remove();
+    if (activeTextInput) { activeTextInput.el.remove(); activeTextInput = null; }
     document.removeEventListener('mousemove', onCanvasMouseMove);
-    document.removeEventListener('mouseup', onCanvasMouseUp);
-    document.removeEventListener('keydown', onKeyDown);
-    editorEl.remove();
-    editorEl = null;
+    document.removeEventListener('mouseup',   onCanvasMouseUp);
+    document.removeEventListener('keydown',   onKeyDown);
+    if (frameEl) { frameEl.remove(); frameEl = null; }
+    if (panelEl) { panelEl.remove(); panelEl = null; }
     canvasEl = null;
-    activeTextInput = null;
     isDrawing = false;
+    mode = 'idle';
+    onCaptureCallback = null;
   }
 
-  return { open, destroy };
+  return { showPanel, open, destroy };
 })();

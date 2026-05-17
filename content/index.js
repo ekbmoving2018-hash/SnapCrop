@@ -4,6 +4,8 @@ window.SnapCrop = window.SnapCrop || {};
   if (window.SnapCrop._active) return;
   window.SnapCrop._active = true;
 
+  let pendingBounds = null;
+
   function cleanup() {
     window.SnapCrop._active = false;
     window.SnapCrop.Selection.destroy();
@@ -25,7 +27,8 @@ window.SnapCrop = window.SnapCrop || {};
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'captured') {
-      window.SnapCrop.Editor.open(msg.croppedDataURL);
+      window.SnapCrop.Selection.destroy();
+      window.SnapCrop.Editor.open(msg.croppedDataURL, pendingBounds);
     } else if (msg.action === 'capture_error') {
       cleanup();
       showToast('Screenshot failed, try again');
@@ -34,16 +37,25 @@ window.SnapCrop = window.SnapCrop || {};
 
   window.addEventListener('beforeunload', cleanup);
 
-  window.SnapCrop.Selection.start((bounds) => {
-    const overlay = document.getElementById('snapcrop-overlay');
-    if (overlay) overlay.style.visibility = 'hidden';
+  window.SnapCrop.Selection.start((initialBounds) => {
+    pendingBounds = initialBounds;
 
-    requestAnimationFrame(() => {
+    // Show panel immediately — capture not triggered yet
+    window.SnapCrop.Editor.showPanel(initialBounds, () => {
+      // User clicked a tool or color → capture now
+      const currentBounds = window.SnapCrop.Selection.getCurrentBounds() || pendingBounds;
+      pendingBounds = currentBounds;
+
+      const overlay = document.getElementById('snapcrop-overlay');
+      if (overlay) overlay.style.visibility = 'hidden';
+
       requestAnimationFrame(() => {
-        chrome.runtime.sendMessage({
-          action: 'capture',
-          bounds,
-          devicePixelRatio: window.devicePixelRatio || 1
+        requestAnimationFrame(() => {
+          chrome.runtime.sendMessage({
+            action: 'capture',
+            bounds: currentBounds,
+            devicePixelRatio: window.devicePixelRatio || 1
+          });
         });
       });
     });
