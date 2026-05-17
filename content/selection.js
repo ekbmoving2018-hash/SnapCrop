@@ -4,7 +4,6 @@ window.SnapCrop.Selection = (function () {
   let overlayEl = null;
   let selectionEl = null;
   let sizeEl = null;
-  let hintEl = null;
   let isDrawing = false;
   let startX = 0;
   let startY = 0;
@@ -20,10 +19,6 @@ window.SnapCrop.Selection = (function () {
     overlayEl = document.createElement('div');
     overlayEl.id = 'snapcrop-overlay';
 
-    hintEl = document.createElement('div');
-    hintEl.id = 'snapcrop-hint';
-    hintEl.textContent = 'Drag to select area — ESC to cancel';
-
     selectionEl = document.createElement('div');
     selectionEl.id = 'snapcrop-selection';
     selectionEl.style.display = 'none';
@@ -31,7 +26,6 @@ window.SnapCrop.Selection = (function () {
     sizeEl = document.createElement('div');
     sizeEl.id = 'snapcrop-size';
 
-    overlayEl.appendChild(hintEl);
     overlayEl.appendChild(selectionEl);
     document.body.appendChild(overlayEl);
   }
@@ -49,7 +43,6 @@ window.SnapCrop.Selection = (function () {
     startX = e.clientX;
     startY = e.clientY;
     selectionEl.style.display = 'block';
-    hintEl.style.display = 'none';
     updateRect(e.clientX, e.clientY);
   }
 
@@ -102,8 +95,11 @@ window.SnapCrop.Selection = (function () {
   function resetSelection() {
     isDrawing = false;
     selectionEl.style.display = 'none';
-    hintEl.textContent = 'Too small — drag a larger area';
-    hintEl.style.display = 'block';
+    const msg = document.createElement('div');
+    msg.id = 'snapcrop-hint';
+    msg.textContent = 'Too small — drag a larger area';
+    overlayEl.appendChild(msg);
+    setTimeout(() => msg.remove(), 1500);
   }
 
   function destroy() {
