@@ -1,0 +1,51 @@
+window.SnapCrop = window.SnapCrop || {};
+
+(function () {
+  if (window.SnapCrop._active) return;
+  window.SnapCrop._active = true;
+
+  function cleanup() {
+    window.SnapCrop._active = false;
+    window.SnapCrop.Selection.destroy();
+    window.SnapCrop.Editor.destroy();
+    const toast = document.getElementById('snapcrop-toast');
+    if (toast) toast.remove();
+  }
+  window.SnapCrop.cleanup = cleanup;
+
+  function showToast(message) {
+    const existing = document.getElementById('snapcrop-toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.id = 'snapcrop-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.action === 'captured') {
+      window.SnapCrop.Editor.open(msg.croppedDataURL);
+    } else if (msg.action === 'capture_error') {
+      cleanup();
+      showToast('Screenshot failed, try again');
+    }
+  });
+
+  window.addEventListener('beforeunload', cleanup);
+
+  window.SnapCrop.Selection.start((bounds) => {
+    const overlay = document.getElementById('snapcrop-overlay');
+    if (overlay) overlay.style.visibility = 'hidden';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        chrome.runtime.sendMessage({
+          action: 'capture',
+          bounds,
+          devicePixelRatio: window.devicePixelRatio || 1
+        });
+      });
+    });
+  });
+})();

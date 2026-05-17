@@ -1,0 +1,11 @@
+{
+  "name": "snapcrop",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "icons": "node scripts/generate-icons.js"
+  },
+  "devDependencies": {
+    "canvas": "^2.11.2"
+  }
+}
