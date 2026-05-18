@@ -86,6 +86,7 @@ window.SnapCrop.Selection = (function () {
 
     // No selection yet — start drawing
     e.preventDefault();
+    overlayEl.style.background = 'transparent';
     isDrawing  = true;
     drawStartX = e.clientX;
     drawStartY = e.clientY;

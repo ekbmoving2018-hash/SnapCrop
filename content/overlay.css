@@ -14,6 +14,7 @@
   position: fixed !important;
   inset: 0 !important;
   z-index: 2147483647 !important;
+  background: rgba(0, 0, 0, 0.3);
   cursor: crosshair;
   user-select: none;
 }
