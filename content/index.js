@@ -8,6 +8,8 @@ window.SnapCrop = window.SnapCrop || {};
 
   function cleanup() {
     window.SnapCrop._active = false;
+    chrome.runtime.onMessage.removeListener(onMessage);
+    window.removeEventListener('beforeunload', cleanup);
     window.SnapCrop.Selection.destroy();
     window.SnapCrop.Editor.destroy();
     const toast = document.getElementById('snapcrop-toast');
@@ -25,7 +27,7 @@ window.SnapCrop = window.SnapCrop || {};
     setTimeout(() => toast.remove(), 3000);
   }
 
-  chrome.runtime.onMessage.addListener((msg) => {
+  function onMessage(msg) {
     if (msg.action === 'captured') {
       window.SnapCrop.Selection.destroy();
       window.SnapCrop.Editor.open(msg.croppedDataURL, pendingBounds);
@@ -33,7 +35,8 @@ window.SnapCrop = window.SnapCrop || {};
       cleanup();
       showToast('Screenshot failed, try again');
     }
-  });
+  }
+  chrome.runtime.onMessage.addListener(onMessage);
 
   window.addEventListener('beforeunload', cleanup);
 
