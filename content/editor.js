@@ -138,6 +138,11 @@ window.SnapCrop.Editor = (function () {
     undoBtn.textContent = '↩ Undo';
     panel.appendChild(undoBtn);
 
+    const clearBtn = el('button', 'sc-panel-btn');
+    clearBtn.id = 'sc-clear';
+    clearBtn.textContent = '✕ Clear';
+    panel.appendChild(clearBtn);
+
     panel.appendChild(divider());
 
     ['png', 'pdf'].forEach(f => {
@@ -194,6 +199,7 @@ window.SnapCrop.Editor = (function () {
     if (mode !== 'editing') return;
 
     if (id === 'sc-undo')     { window.SnapCrop.Annotations.undo();  return; }
+    if (id === 'sc-clear')    { window.SnapCrop.Annotations.clear(); return; }
     if (id === 'sc-copy')     { onCopy();                            return; }
     if (id === 'sc-download') { onDownload();                        return; }
   }
@@ -282,7 +288,8 @@ window.SnapCrop.Editor = (function () {
   function startTextInput(e) {
     if (activeTextInput) commitText();
     const rect = canvasEl.getBoundingClientRect();
-    const cx = (e.clientX - rect.left) * (canvasEl.width  / rect.width);
+    const scale = canvasEl.width / rect.width;
+    const cx = (e.clientX - rect.left) * scale;
     const cy = (e.clientY - rect.top)  * (canvasEl.height / rect.height);
 
     const input = document.createElement('input');
@@ -293,7 +300,7 @@ window.SnapCrop.Editor = (function () {
     input.style.color = currentColor;
     document.body.appendChild(input);
     input.focus();
-    activeTextInput = { el: input, cx, cy };
+    activeTextInput = { el: input, cx, cy, scale };
 
     input.addEventListener('keydown', (ev) => {
       ev.stopPropagation();
@@ -305,11 +312,13 @@ window.SnapCrop.Editor = (function () {
 
   function commitText() {
     if (!activeTextInput) return;
-    const { el: input, cx, cy } = activeTextInput;
+    const { el: input, cx, cy, scale } = activeTextInput;
     if (input.value.trim()) {
+      const fontSize = Math.round(16 * scale);
       window.SnapCrop.Annotations.add({
         type: 'text', color: currentColor,
-        x: cx, y: cy + 16,
+        x: cx, y: cy + fontSize,
+        fontSize,
         content: input.value
       });
     }

@@ -77,8 +77,8 @@ window.SnapCrop.Annotations = (function () {
   }
 
   function drawText(item) {
-    const { x, y, content, color } = item;
-    ctx.font = 'bold 16px Arial, sans-serif';
+    const { x, y, content, color, fontSize } = item;
+    ctx.font = `bold ${fontSize || 16}px Arial, sans-serif`;
     ctx.fillStyle = color;
     ctx.fillText(content, x, y);
   }
