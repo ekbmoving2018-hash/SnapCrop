@@ -217,6 +217,29 @@ window.SnapCrop.Editor = (function () {
 
   function onCanvasMouseMove(e) {
     if (!isDrawing) return;
+    const { x: curX, y: curY } = canvasPos(e);
+    if (currentTool === 'arrow') {
+      window.SnapCrop.Annotations.preview({
+        type: 'arrow', color: currentColor,
+        x1: startX, y1: startY, x2: curX, y2: curY
+      });
+    } else if (currentTool === 'marker') {
+      window.SnapCrop.Annotations.preview({
+        type: 'marker', color: currentColor,
+        x: Math.min(startX, curX),
+        y: Math.min(startY, curY),
+        width:  Math.abs(curX - startX),
+        height: Math.abs(curY - startY)
+      });
+    } else if (currentTool === 'ellipse') {
+      window.SnapCrop.Annotations.preview({
+        type: 'ellipse', color: currentColor,
+        cx: (startX + curX) / 2,
+        cy: (startY + curY) / 2,
+        rx: Math.abs(curX - startX) / 2,
+        ry: Math.abs(curY - startY) / 2
+      });
+    }
   }
 
   function onCanvasMouseUp(e) {

@@ -61,10 +61,9 @@ window.SnapCrop.Annotations = (function () {
 
   function drawMarker(item) {
     const { x, y, width, height, color } = item;
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, width, height);
-    ctx.globalAlpha = 1;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x, y, width, height);
   }
 
   function drawEllipse(item) {
@@ -82,6 +81,13 @@ window.SnapCrop.Annotations = (function () {
     ctx.font = 'bold 16px Arial, sans-serif';
     ctx.fillStyle = color;
     ctx.fillText(content, x, y);
+  }
+
+  function preview(item) {
+    redraw();
+    ctx.save();
+    drawItem(item);
+    ctx.restore();
   }
 
   function add(item) {
@@ -104,5 +110,5 @@ window.SnapCrop.Annotations = (function () {
     return canvas;
   }
 
-  return { init, add, undo, clear, getCanvas };
+  return { init, add, undo, clear, getCanvas, preview };
 })();
