@@ -25,6 +25,7 @@ window.SnapCrop.Annotations = (function () {
     ctx.save();
     if (item.type === 'arrow') drawArrow(item);
     else if (item.type === 'marker') drawMarker(item);
+    else if (item.type === 'ellipse') drawEllipse(item);
     else if (item.type === 'text') drawText(item);
     ctx.restore();
   }
@@ -64,6 +65,16 @@ window.SnapCrop.Annotations = (function () {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, width, height);
     ctx.globalAlpha = 1;
+  }
+
+  function drawEllipse(item) {
+    const { cx, cy, rx, ry, color } = item;
+    if (rx < 1 || ry < 1) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   function drawText(item) {

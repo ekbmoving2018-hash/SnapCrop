@@ -95,16 +95,29 @@ window.SnapCrop.Editor = (function () {
       'z-index: 2147483647 !important'
     ].join(';');
 
+    // Close button at top right
+    const header = el('div', 'sc-panel-header');
+    const closeBtn = el('button', 'sc-panel-close-top');
+    closeBtn.id = 'sc-close';
+    closeBtn.textContent = '✕';
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+
+    // Tool icons 2×2 grid
+    const toolGrid = el('div', 'sc-tools-grid');
     [
-      { id: 'arrow',  label: '→ Arrow'  },
-      { id: 'marker', label: '■ Marker' },
-      { id: 'text',   label: 'T Text'   }
+      { id: 'arrow',   icon: '↗', title: 'Стрелка'       },
+      { id: 'marker',  icon: '□', title: 'Прямоугольник'  },
+      { id: 'ellipse', icon: '○', title: 'Круг'           },
+      { id: 'text',    icon: 'T', title: 'Текст'          }
     ].forEach(t => {
-      const btn = el('button', 'sc-panel-btn sc-tool-btn' + (t.id === 'arrow' ? ' active' : ''));
+      const btn = el('button', 'sc-tool-icon-btn sc-tool-btn');
       btn.dataset.tool = t.id;
-      btn.textContent  = t.label;
-      panel.appendChild(btn);
+      btn.textContent  = t.icon;
+      btn.title        = t.title;
+      toolGrid.appendChild(btn);
     });
+    panel.appendChild(toolGrid);
 
     panel.appendChild(divider());
 
@@ -125,11 +138,6 @@ window.SnapCrop.Editor = (function () {
     undoBtn.textContent = '↩ Undo';
     panel.appendChild(undoBtn);
 
-    const clearBtn = el('button', 'sc-panel-btn');
-    clearBtn.id = 'sc-clear';
-    clearBtn.textContent = '✕ Clear';
-    panel.appendChild(clearBtn);
-
     panel.appendChild(divider());
 
     ['png', 'pdf'].forEach(f => {
@@ -146,17 +154,15 @@ window.SnapCrop.Editor = (function () {
 
     panel.appendChild(divider());
 
+    const copyBtn = el('button', 'sc-copy-btn');
+    copyBtn.id = 'sc-copy';
+    copyBtn.textContent = 'Copy';
+    panel.appendChild(copyBtn);
+
     const dlBtn = el('button', 'sc-panel-download');
     dlBtn.id = 'sc-download';
     dlBtn.textContent = '↓ Download';
     panel.appendChild(dlBtn);
-
-    panel.appendChild(divider());
-
-    const closeBtn = el('button', 'sc-panel-close');
-    closeBtn.id = 'sc-close';
-    closeBtn.textContent = '✕ Close';
-    panel.appendChild(closeBtn);
 
     return panel;
   }
@@ -188,7 +194,7 @@ window.SnapCrop.Editor = (function () {
     if (mode !== 'editing') return;
 
     if (id === 'sc-undo')     { window.SnapCrop.Annotations.undo();  return; }
-    if (id === 'sc-clear')    { window.SnapCrop.Annotations.clear(); return; }
+    if (id === 'sc-copy')     { onCopy();                            return; }
     if (id === 'sc-download') { onDownload();                        return; }
   }
 
@@ -230,6 +236,14 @@ window.SnapCrop.Editor = (function () {
         y: Math.min(startY, endY),
         width:  Math.abs(endX - startX),
         height: Math.abs(endY - startY)
+      });
+    } else if (currentTool === 'ellipse') {
+      window.SnapCrop.Annotations.add({
+        type: 'ellipse', color: currentColor,
+        cx: (startX + endX) / 2,
+        cy: (startY + endY) / 2,
+        rx: Math.abs(endX - startX) / 2,
+        ry: Math.abs(endY - startY) / 2
       });
     }
   }
@@ -289,6 +303,17 @@ window.SnapCrop.Editor = (function () {
   function onKeyDown(e) {
     if (e.key === 'Escape' && !activeTextInput) {
       window.SnapCrop.cleanup();
+    }
+  }
+
+  async function onCopy() {
+    const canvas = window.SnapCrop.Annotations.getCanvas();
+    if (!canvas) return;
+    try {
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    } catch {
+      // clipboard unavailable (HTTP page or permission denied)
     }
   }
 
