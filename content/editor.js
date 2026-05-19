@@ -25,6 +25,7 @@ window.SnapCrop.Editor = (function () {
   let startX = 0;
   let startY = 0;
   let activeTextInput = null;
+  let pendingAutoDownload = false;
 
   /* ── Phase 1: show panel only (no capture yet) ── */
 
@@ -65,7 +66,10 @@ window.SnapCrop.Editor = (function () {
     img.onload = () => {
       canvasEl.width  = img.naturalWidth;
       canvasEl.height = img.naturalHeight;
-      window.SnapCrop.Annotations.init(canvasEl, croppedDataURL);
+      const onReady = pendingAutoDownload
+        ? () => { pendingAutoDownload = false; onDownload(); }
+        : null;
+      window.SnapCrop.Annotations.init(canvasEl, croppedDataURL, onReady);
     };
     img.src = croppedDataURL;
 
@@ -195,6 +199,12 @@ window.SnapCrop.Editor = (function () {
 
     const id = e.target.id;
     if (id === 'sc-close') { window.SnapCrop.cleanup(); return; }
+
+    if (id === 'sc-download' && mode === 'panel') {
+      pendingAutoDownload = true;
+      triggerCapture();
+      return;
+    }
 
     if (mode !== 'editing') return;
 
@@ -378,6 +388,7 @@ window.SnapCrop.Editor = (function () {
     isDrawing = false;
     mode = 'idle';
     onCaptureCallback = null;
+    pendingAutoDownload = false;
   }
 
   return { showPanel, open, destroy };

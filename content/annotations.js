@@ -6,12 +6,15 @@ window.SnapCrop.Annotations = (function () {
   let canvas = null;
   let ctx = null;
 
-  function init(canvasEl, imgSrc) {
+  function init(canvasEl, imgSrc, onReady) {
     canvas = canvasEl;
     ctx = canvas.getContext('2d');
     items = [];
     screenshotImage = new Image();
-    screenshotImage.onload = () => redraw();
+    screenshotImage.onload = () => {
+      redraw();
+      if (onReady) onReady();
+    };
     screenshotImage.src = imgSrc;
   }
 
