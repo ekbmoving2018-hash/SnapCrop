@@ -49,8 +49,7 @@ window.SnapCrop = window.SnapCrop || {};
       const currentBounds = window.SnapCrop.Selection.getCurrentBounds() || pendingBounds;
       pendingBounds = currentBounds;
 
-      const overlay = document.getElementById('snapcrop-overlay');
-      if (overlay) overlay.style.visibility = 'hidden';
+      window.SnapCrop.Selection.destroy();
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
