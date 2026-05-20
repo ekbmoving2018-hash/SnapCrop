@@ -1,4 +1,4 @@
-# Technical Specification — SnapCrop Chrome Extension
+# Technical Specification — Screen To PDF Chrome Extension
 
 **Version:** 1.0  
 **Date:** 2026-05-16  
@@ -123,7 +123,7 @@ Bounds из overlay записываются в CSS-пикселях.
 ```json
 {
   "manifest_version": 3,
-  "name": "SnapCrop",
+  "name": "Screen To PDF",
   "version": "1.0.0",
   "description": "Capture any area of the page, annotate, and save as PNG or PDF.",
   "permissions": [
@@ -142,7 +142,7 @@ Bounds из overlay записываются в CSS-пикселях.
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "SnapCrop — Take Screenshot (Alt+Shift+S)"
+    "default_title": "Screen To PDF — Take Screenshot (Alt+Shift+S)"
   },
   "commands": {
     "_execute_action": {
@@ -150,7 +150,7 @@ Bounds из overlay записываются в CSS-пикселях.
         "default": "Alt+Shift+S",
         "mac": "Alt+Shift+S"
       },
-      "description": "Activate SnapCrop"
+      "description": "Activate Screen To PDF"
     }
   },
   "icons": {
@@ -416,7 +416,7 @@ chrome.downloads.download({
 
 ### CSS Isolation
 Страница может иметь глобальные стили (reset, font, box-sizing), которые сломают overlay.  
-Каждый корневой элемент SnapCrop начинается с `all: initial` чтобы сбросить наследование:
+Каждый корневой элемент Screen To PDF начинается с `all: initial` чтобы сбросить наследование:
 
 ```css
 /* Применяется к каждому корневому элементу overlay */
@@ -499,7 +499,7 @@ chrome.downloads.download({
 | Overlay уже активен при повторной активации | Второй overlay не создаётся (проверка `document.getElementById('snapcrop-overlay')`) |
 | Страница с `chrome://` или `edge://` URL | Chrome блокирует `scripting.executeScript` — исключение поймать в SW, молча игнорировать |
 | jsPDF не загружен | PDF-кнопка `disabled`, PNG всегда доступен |
-| Пользователь переходит на другую страницу пока overlay открыт | `window.addEventListener('beforeunload', cleanup)` — cleanup() удаляет все DOM-элементы SnapCrop |
+| Пользователь переходит на другую страницу пока overlay открыт | `window.addEventListener('beforeunload', cleanup)` — cleanup() удаляет все DOM-элементы Screen To PDF |
 
 ### Error UX — Toast реализация
 

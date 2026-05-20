@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "SnapCrop",
+  "name": "Screen To PDF",
   "version": "1.0.0",
-  "description": "Capture any area of the page, annotate, and save as PNG or PDF.",
+  "description": "Screenshot to PDF converter. Capture any area, annotate with arrows, shapes and text, save as PNG or PDF.",
   "permissions": ["activeTab", "scripting", "downloads"],
   "background": {
     "service_worker": "background/service-worker.js"
@@ -14,7 +14,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "SnapCrop — Take Screenshot (Alt+Shift+S)"
+    "default_title": "Screen To PDF — Take Screenshot (Alt+Shift+S)"
   },
   "commands": {
     "_execute_action": {
@@ -22,7 +22,7 @@
         "default": "Alt+Shift+S",
         "mac": "Alt+Shift+S"
       },
-      "description": "Activate SnapCrop"
+      "description": "Activate Screen To PDF"
     }
   },
   "icons": {

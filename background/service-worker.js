@@ -4,7 +4,7 @@ function generateFilename(format) {
   sessionCounter++;
   const date = new Date().toISOString().slice(0, 10);
   const count = String(sessionCounter).padStart(3, '0');
-  return `snapcrop_${date}_${count}.${format}`;
+  return `screen_to_pdf_${date}_${count}.${format}`;
 }
 
 chrome.action.onClicked.addListener(async (tab) => {

@@ -1,4 +1,4 @@
-# CLAUDE.md — Rules for Claude Code in SnapCrop project
+# CLAUDE.md — Rules for Claude Code in Screen To PDF project
 
 > Этот файл — инструкции для AI-агента (Claude Code, Cursor agent, и т.п.).
 > Агент читает его при старте работы и следует правилам в каждой сессии.
@@ -8,7 +8,7 @@
 
 ## 1. О проекте
 
-**SnapCrop** — Chrome-расширение (Manifest V3) для захвата области экрана, аннотации и сохранения в PNG/PDF.
+**Screen To PDF** — Chrome-расширение (Manifest V3) для захвата области экрана, аннотации и сохранения в PNG/PDF.
 
 **Стек:** Vanilla JavaScript (ES2022) · без build-шага · jsPDF (UMD) для PDF.
 
@@ -90,7 +90,7 @@
 ```
 ## Как проверить
 
-1. Открой `chrome://extensions`, нажми кнопку перезагрузки на карточке SnapCrop.
+1. Открой `chrome://extensions`, нажми кнопку перезагрузки на карточке Screen To PDF.
 2. Открой любую обычную страницу (например, google.com).
 3. Нажми Alt+Shift+S.
    ✓ Ожидаемо: страница затемняется, курсор становится crosshair.
